@@ -1,0 +1,1212 @@
+---
+title: "STAT409 Project"
+author: "Kira Novitchkova-Burbank"
+date: "2025-05-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries, Reading in Data, and Unique Amount of Classes
+```{r}
+library(dplyr)
+library(gridExtra)
+library(ggplot2)
+library(grid)
+
+students_df <- read.csv("WHS_cleaned_6.csv")
+head(students_df)
+
+unique(students_df$Course.Description)
+```
+
+```{r}
+unique(students_df$Subject)
+```
+
+
+# Unique Mentored Students By Semester
+```{r}
+library(dplyr)
+
+# Filter to unique mentored students by semester
+mentored_students <- students_df %>%
+  filter(Mentored.Student == "Yes") %>%
+  distinct(Student.ID, Semester, .keep_all = TRUE)
+
+# Split into Semester 1 and Semester 2
+mentored_S1 <- mentored_students %>%
+  filter(Semester == "S1")
+
+mentored_S2 <- mentored_students %>%
+  filter(Semester == "S2")
+
+# View first few rows
+head(mentored_S1)
+head(mentored_S2)
+```
+
+# Unique Non-Mentored Students By Semester
+```{r}
+# Filter to unique non-mentored students by semester
+non_mentored_students <- students_df %>%
+  filter(Mentored.Student == "No") %>%
+  distinct(Student.ID, Semester, .keep_all = TRUE)
+
+# Split into Semester 1 and Semester 2
+non_mentored_S1 <- non_mentored_students %>%
+  filter(Semester == "S1")
+
+non_mentored_S2 <- non_mentored_students %>%
+  filter(Semester == "S2")
+
+# See first few rows
+head(non_mentored_S1)
+head(non_mentored_S2)
+
+```
+
+# Finding # of Students in Each Category
+```{r}
+# Count the number of students in each group
+n_mentored_S1 <- nrow(mentored_S1)
+n_mentored_S2 <- nrow(mentored_S2)
+n_non_mentored_S1 <- nrow(non_mentored_S1)
+n_non_mentored_S2 <- nrow(non_mentored_S2)
+
+# Calculate total students per semester
+total_S1 <- n_mentored_S1 + n_non_mentored_S1
+total_S2 <- n_mentored_S2 + n_non_mentored_S2
+
+# Create summary table
+summary_counts <- data.frame(
+  Group = c(
+    "Mentored - Semester 1",
+    "Mentored - Semester 2",
+    "Non-Mentored - Semester 1",
+    "Non-Mentored - Semester 2",
+    "Total Students - Semester 1",
+    "Total Students - Semester 2"
+  ),
+  Count = c(
+    n_mentored_S1,
+    n_mentored_S2,
+    n_non_mentored_S1,
+    n_non_mentored_S2,
+    total_S1,
+    total_S2
+  )
+)
+
+# Print the labeled summary
+print(summary_counts, row.names = FALSE)
+```
+
+# Unique mentored students across both semesters
+```{r}
+# Unique mentored students across both semesters, keeping all columns
+unique_mentored_students <- students_df %>%
+  filter(Mentored.Student == "Yes") %>%
+  distinct(Student.ID, .keep_all = TRUE)
+
+# View the first few rows
+head(unique_mentored_students)
+
+# Count the number of unique mentored students
+n_unique_mentored <- nrow(unique_mentored_students)
+print(paste("Number of unique mentored students across both semesters:", n_unique_mentored))
+
+```
+
+# Unique non-mentored students across both semesters
+```{r}
+# Unique non-mentored students across both semesters, keeping all columns
+unique_non_mentored_students <- students_df %>%
+  filter(Mentored.Student == "No") %>%
+  distinct(Student.ID, .keep_all = TRUE)
+
+# View the first few rows
+head(unique_non_mentored_students)
+
+# Count the number of unique non-mentored students
+n_unique_non_mentored <- nrow(unique_non_mentored_students)
+print(paste("Number of unique non-mentored students across both semesters:", n_unique_non_mentored))
+
+```
+
+
+
+# Students with yes in Mentored.Student all courses all weeks per semester
+```{r}
+# Filter all mentored and non-mentored rows by semester and not unique students
+notunique_mentored_S1 <- students_df %>%
+  filter(Mentored.Student == "Yes", Semester == "S1")
+
+notunique_mentored_S2 <- students_df %>%
+  filter(Mentored.Student == "Yes", Semester == "S2")
+
+head(notunique_mentored_S1)
+head(notunique_mentored_S2)
+```
+
+
+# Students with no in Mentored.Student all courses all weeks per semester
+```{r}
+notunique_non_mentored_S1 <- students_df %>%
+  filter(Mentored.Student == "No", Semester == "S1")
+
+notunique_non_mentored_S2 <- students_df %>%
+  filter(Mentored.Student == "No", Semester == "S2")
+
+head(notunique_non_mentored_S1)
+head(notunique_non_mentored_S2)
+```
+
+
+# Students that have a yes in the mentor.student and mentor.course col but includes all the weeks per semester
+```{r}
+# Mentored students in S1 who have a Yes in the Mentor Course Column
+mentored_in_course_S1 <- students_df %>%
+  filter(Mentored.Student == "Yes", Semester == "S1", Mentor.Course == "Yes")
+
+# Mentored students in S2 who have a Yes in the Mentor Course Column
+mentored_in_course_S2 <- students_df %>%
+  filter(Mentored.Student == "Yes", Semester == "S2", Mentor.Course == "Yes")
+
+# View first few rows
+head(mentored_in_course_S1)
+head(mentored_in_course_S2)
+```
+
+
+# Student id of mentored student and the course description of the class that they are mentored in per semester not unique student id if student gets mentoring in multiple classes and counts of students in each of these courses to make the barplot
+```{r}
+# For Semester 1 mentored students in mentor course:
+mentored_unique_pairs_S1 <- mentored_in_course_S1 %>%
+  distinct(Student.ID, Course.Description)  # unique student-course pairs
+
+# Count unique students per course
+counts_S1 <- mentored_unique_pairs_S1 %>%
+  count(Course.Description) %>%
+  arrange(n)  # sorted least to most
+
+# Same for Semester 2
+mentored_unique_pairs_S2 <- mentored_in_course_S2 %>%
+  distinct(Student.ID, Course.Description)
+
+counts_S2 <- mentored_unique_pairs_S2 %>%
+  count(Course.Description) %>%
+  arrange(n)
+
+head(mentored_unique_pairs_S1)
+head(mentored_unique_pairs_S2)
+
+head(counts_S1)
+head(counts_S2)
+```
+
+# Student id of mentored student, class description, and subject for that class that they are mentored in per semester not unique student id if student gets mentoring in multiple classes and counts of students in each of these courses to make the barplot
+```{r}
+# For Semester 1: include Subject in unique pairs
+mentored_unique_subjects_S1 <- mentored_in_course_S1 %>%
+  distinct(Student.ID, Course.Description, Subject)
+
+# Count unique student-course pairs by Subject
+subject_counts_S1 <- mentored_unique_subjects_S1 %>%
+  count(Subject) %>%
+  arrange(n)
+
+# For Semester 2
+mentored_unique_subjects_S2 <- mentored_in_course_S2 %>%
+  distinct(Student.ID, Course.Description, Subject)
+
+subject_counts_S2 <- mentored_unique_subjects_S2 %>%
+  count(Subject) %>%
+  arrange(n)
+
+# View results
+
+head(mentored_unique_subjects_S1 %>% 
+  group_by(Student.ID,Subject) %>% tally())
+
+head(mentored_unique_subjects_S2 %>% 
+  group_by(Student.ID,Subject) %>% tally())
+
+subject_counts_S1
+subject_counts_S2
+
+```
+
+
+# Mentored Students Per Course Plot
+```{r}
+# Create the two ggplot objects
+plot_S1 <- ggplot(counts_S1, aes(x = reorder(Course.Description, n), y = n)) +
+  geom_bar(stat = "identity", fill = "#2C77B2") +
+  coord_flip() +
+  scale_y_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 2)) +
+  labs(
+    title = "Number of Mentored Students per Course (Semester 1)",
+    x = "Course Description",
+    y = "Number of Students"
+  ) +
+  theme_minimal()
+
+plot_S2 <- ggplot(counts_S2, aes(x = reorder(Course.Description, n), y = n)) +
+  geom_bar(stat = "identity", fill = "#66c2a5") +
+  coord_flip() +
+  scale_y_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 2)) +
+  labs(
+    title = "Number of Mentored Students per Course (Semester 2)",
+    x = "Course Description",
+    y = "Number of Students"
+  ) +
+  theme_minimal()
+
+# Display side by side
+grid.arrange(plot_S1, plot_S2, ncol = 2)
+
+```
+
+
+# Mentored Students Per Subject Plot
+```{r}
+# Plot for Semester 1: Mentored Students per Subject
+plot_subject_S1 <- ggplot(subject_counts_S1, aes(x = reorder(Subject, n), y = n)) +
+  geom_bar(stat = "identity", fill = "#2C77B2") +
+  coord_flip() +
+  scale_y_continuous(limits = c(0, 22), breaks = seq(0, 22, by = 2)) +
+  labs(
+    title = "Number of Mentored Students per Subject (Semester 1)",
+    x = "Subject",
+    y = "Number of Students"
+  ) +
+  theme_minimal()
+
+# Plot for Semester 2: Mentored Students per Subject
+plot_subject_S2 <- ggplot(subject_counts_S2, aes(x = reorder(Subject, n), y = n)) +
+  geom_bar(stat = "identity", fill = "#66c2a5") +
+  coord_flip() +
+  scale_y_continuous(limits = c(0, 22), breaks = seq(0, 22, by = 2)) +
+  labs(
+    title = "Number of Mentored Students per Subject (Semester 2)",
+    x = "Subject",
+    y = "Number of Students"
+  ) +
+  theme_minimal()
+
+# Display plots side by side
+grid.arrange(plot_subject_S1, plot_subject_S2, ncol = 2)
+
+```
+
+
+```{r}
+# Filter all students by semester
+all_students_S1 <- students_df %>% filter(Semester == "S1")
+all_students_S2 <- students_df %>% filter(Semester == "S2")
+
+```
+
+
+# All unique student-course pairs not just mentored students per semester
+```{r}
+# All unique student-course pairs that mentored 
+all_pairs_S1 <- all_students_S1 %>%
+  distinct(Student.ID, Course.Description)
+
+all_pairs_S2 <- all_students_S2 %>%
+  distinct(Student.ID, Course.Description)
+
+head(all_pairs_S1)
+head(all_pairs_S2)
+```
+
+
+# Top 15 Courses with At Least 1 Mentored Student Plot Per Semester
+```{r}
+# Step 1: Count courses and keep top 15 (Semester 1)
+course_counts_S1 <- all_pairs_S1 %>%
+  count(Course.Description) %>%
+  slice_max(n, n = 15) %>%  # top 15
+  arrange(n)                # sort least to most for horizontal bars
+
+# Step 2: Count courses and keep top 15 (Semester 2)
+course_counts_S2 <- all_pairs_S2 %>%
+  count(Course.Description) %>%
+  slice_max(n, n = 15) %>%
+  arrange(n)
+
+# Step 3: Plot for Semester 1
+plot_S1 <- ggplot(course_counts_S1, aes(x = reorder(Course.Description, n), y = n)) +
+  geom_bar(stat = "identity", fill = "#4E79A7") +
+  coord_flip() +
+  labs(
+    title = "Top 15 Courses with At Least 1 Mentored Student (Semester 1)",
+    x = "Course Description",
+    y = "Number of Students"
+  ) +
+  theme_minimal()
+
+# Step 4: Plot for Semester 2
+plot_S2 <- ggplot(course_counts_S2, aes(x = reorder(Course.Description, n), y = n)) +
+  geom_bar(stat = "identity", fill = "#66c2a5") +
+  coord_flip() +
+  labs(
+    title = "Top 15 Courses with At Least 1 Mentored Student (Semester 2)",
+    x = "Course Description",
+    y = "Number of Students"
+  ) +
+  theme_minimal()
+
+# Step 5: Display side by side
+grid.arrange(plot_S1, plot_S2, ncol = 2)
+
+```
+
+# All weeks of all classes where a student gets mentoring
+```{r}
+weekly_full_unique <- students_df %>%
+  filter(Mentored.Student == "Yes", Mentor.Course == "Yes") %>%
+  distinct(Student.ID, Week, .keep_all = TRUE)
+
+head(weekly_full_unique)
+
+```
+
+# All subjects that contain mentoring students over the year (used in modeling)
+```{r}
+unique_subjects <- weekly_full_unique %>%
+  distinct(Subject) %>%
+  arrange(Subject)
+
+unique_subjects
+
+```
+
+
+# Finding max week in the dataset and filtering for last week of each semester
+```{r}
+# Get the maximum week number
+max_week <- max(weekly_full_unique$Week, na.rm = TRUE)
+max_week
+
+# Filter for Weeks 20 and max week
+week_20_max_rows <- weekly_full_unique %>%
+  filter(Week == 20 | Week == max_week)
+
+head(week_20_max_rows)
+
+```
+
+
+# Finding typical amount of mentoring sessions per week and typical gap (for modeling)
+```{r}
+
+# Categorize subjects and compute averages and gaps
+average_by_category <- week_20_max_rows %>%
+  filter(`Running.Total..Class.` > 0) %>%
+  mutate(
+    # Normalize by semester length
+    Normalized.Running.Total.Class = case_when(
+      Week == 20 ~ `Running.Total..Class.` / 19,
+      Week == max_week ~ `Running.Total..Class.` / (max_week - 21 + 1),
+      TRUE ~ NA_real_
+    ),
+    
+    # Categorize subjects
+    Subject.Category = case_when(
+      Subject == "Business" ~ "Business",
+      Subject == "English" ~ "English",
+      Subject == "Math" ~ "Math",
+      Subject == "Science" ~ "Science",
+      TRUE ~ "Other"
+    )
+  ) %>%
+  group_by(Subject.Category) %>%
+  summarise(
+    Avg.Mentoring.Sessions.Per.Week = mean(Normalized.Running.Total.Class, na.rm = TRUE),
+    n = n(),
+    Avg.Gap.Between.Sessions = 1 / Avg.Mentoring.Sessions.Per.Week,
+    .groups = "drop"
+  ) %>%
+  arrange(desc(Avg.Gap.Between.Sessions))
+
+# View result
+average_by_category
+
+```
+
+
+# Making two dataframes with the last week of each semster
+```{r}
+# Filter for week 20 and the final week (max_week)
+week_20_rows <- weekly_full_unique %>% filter(Week == 20)
+week_max_rows <- weekly_full_unique %>% filter(Week == max_week)
+
+# Display the rows
+head(week_20_rows)
+head(week_max_rows)
+
+```
+
+
+```{r}
+# Combine Week 20 and max week rows
+combined_weeks <- bind_rows(week_20_rows, week_max_rows) %>%
+  mutate(Semester = recode(Semester, "S1" = "Semester 1", "S2" = "Semester 2"))
+
+# Count number of students per mentoring session total and semester
+session_counts <- combined_weeks %>%
+  count(`Running.Total..Any..Semester.Scoped.`, Semester)
+
+# Determine max y value for breaks
+max_y <- max(session_counts$n)
+
+# Plot grouped bar chart with y-axis by 2
+ggplot(session_counts, aes(
+  x = `Running.Total..Any..Semester.Scoped.`,
+  y = n,
+  fill = Semester
+)) +
+  geom_col(position = position_dodge(width = 0.5), width = 0.7, color = "white") +
+  labs(
+    title = "Total Mentoring Sessions Attended by Mentored Students per Semester",
+    subtitle = "Grouped bars show number of students per session count, by semester",
+    x = "Total Mentoring Sessions",
+    y = "Number of Students",
+    fill = "Semester"
+  ) +
+  scale_fill_manual(values = c("Semester 1" = "#4E79A7", "Semester 2" = "#66c2a5")) +
+  scale_x_continuous(
+    breaks = seq(0, max(session_counts$`Running.Total..Any..Semester.Scoped.`), by = 1)
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, max_y + 1, by = 2),  # +1 ensures upper bound is included
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  theme_minimal()
+
+
+```
+
+
+```{r}
+# Summarize total mentoring sessions per class & semester
+class_summary <- combined_weeks %>%
+  group_by(Course.Code, Semester) %>%
+  summarise(Total.Mentoring = max(`Running.Total..Class.`), .groups = "drop")
+
+# Calculate total mentoring sessions per course across semesters for sorting
+course_totals <- class_summary %>%
+  group_by(Course.Code) %>%
+  summarise(TotalAllSemesters = sum(Total.Mentoring), .groups = "drop")
+
+# Join back to class_summary to get sorting variable
+class_summary <- class_summary %>%
+  left_join(course_totals, by = "Course.Code") %>%
+  mutate(Course.Factor = factor(Course.Code, levels = course_totals$Course.Code[order(course_totals$TotalAllSemesters)]))
+
+# Plot with centered labels and separated bars
+ggplot(class_summary, aes(x = Course.Factor, y = Total.Mentoring, fill = Semester)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9), width = 0.6) +
+  labs(
+    title = "Total Mentoring Sessions Attended by Mentored Students per Class",
+    x = "Course Code",
+    y = "Total Mentoring Sessions",
+    fill = "Semester"
+  ) +
+  scale_fill_manual(values = c("Semester 1" = "#4E79A7", "Semester 2" = "#66c2a5")) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5)
+  )
+
+```
+
+
+
+```{r}
+p <- ggplot(weekly_full_unique, aes(x = Week, y = `Running.Total..Any.`, group = Student.ID)) +
+  geom_line(alpha = 0.4, color = "#004225", size = 1.5) +
+  labs(
+    title = "Cumulative Mentoring Sessions Attended by Mentored Students",
+    subtitle = "Each line represents one mentored student’s cumulative sessions",
+    x = "Week of Academic Year",
+    y = "Cumulative Mentoring Sessions"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    legend.position = "top",
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 13)
+  )
+
+# Dashed bold vertical line and legend
+vline_df <- data.frame(xintercept = 21, Label = "Cutoff Between Semesters 1 & 2")
+
+p +
+  geom_vline(
+    data = vline_df,
+    aes(xintercept = xintercept, color = Label),
+    linetype = "dashed",
+    size = 1.5
+  ) +
+  scale_color_manual(name = NULL, values = c("Cutoff Between Semesters 1 & 2" = "black")) +
+  guides(color = guide_legend(override.aes = list(linetype = "dashed", size = 1.5)))
+
+
+```
+
+
+```{r}
+# Filter data from the updated dataset
+s1_data <- weekly_full_unique %>% filter(Semester == "S1")
+s2_data <- weekly_full_unique %>% filter(Semester == "S2")
+
+# Plot for Semester 1 with dark blue, bolder lines
+plot_s1 <- ggplot(s1_data, aes(x = Week, y = `Running.Total..Any..Semester.Scoped.`, group = Student.ID)) +
+  geom_line(alpha = 0.6, color = "#003366", size = 1.2) +
+  labs(
+    title = "Mentoring Engagement Over Time (Semester 1)",
+    subtitle = "Each line represents one student’s cumulative sessions",
+    x = "Week of Semester",
+    y = "Cumulative Mentoring Sessions"
+  ) +
+  xlim(0, 20) +
+  ylim(0, 25) +
+  theme_minimal()
+
+# Plot for Semester 2 with dark green, bolder lines
+plot_s2 <- ggplot(s2_data, aes(x = Week, y = `Running.Total..Any..Semester.Scoped.`, group = Student.ID)) +
+  geom_line(alpha = 0.6, color = "#004225", size = 1.2) +
+  labs(
+    title = "Mentoring Engagement Over Time (Semester 2)",
+    subtitle = "Each line represents one student’s cumulative sessions",
+    x = "Week of Semester",
+    y = "Cumulative Mentoring Sessions"
+  ) +
+  xlim(21, 40) +
+  ylim(0, 25) +
+  theme_minimal()
+
+# Arrange side by side
+grid.arrange(plot_s1, plot_s2, ncol = 2)
+
+
+```
+
+```{r}
+# Filter for Semester 2 data and adjust weeks to start at 1
+s2_data_adjusted <- weekly_full_unique %>%
+  filter(Semester == "S2") %>%
+  mutate(Week_Adjusted = Week - 20) %>%  # Week 21 becomes 1
+  filter(Week_Adjusted >= 1 & Week_Adjusted <= 19)
+
+# Plot Semester 2 with adjusted week numbers
+plot_s2_adjusted <- ggplot(s2_data_adjusted, aes(x = Week_Adjusted, y = `Running.Total..Any..Semester.Scoped.`, group = Student.ID)) +
+  geom_line(alpha = 0.6, color = "#004225", size = 1.2) +
+  labs(
+    title = "Mentoring Engagement Over Time (Semester 2)",
+    subtitle = "Week numbers adjusted to start at 1",
+    x = "Week (Starting at 1)",
+    y = "Cumulative Mentoring Sessions"
+  ) +
+  xlim(1, 19) +
+  ylim(0, 25) +
+  theme_minimal()
+
+plot_s2_adjusted
+
+
+```
+
+```{r}
+# Prepare Semester 1 data (Week starts at 2)
+s1_data <- weekly_full_unique %>%
+  filter(Semester == "S1") %>%
+  mutate(Semester_Label = "Semester 1", Week_Adjusted = Week)
+
+# Prepare Semester 2 data (Week starts at 1)
+s2_data <- weekly_full_unique %>%
+  filter(Semester == "S2") %>%
+  mutate(Semester_Label = "Semester 2", Week_Adjusted = Week - 20)
+
+# Combine the two datasets
+combined_data <- bind_rows(s1_data, s2_data)
+
+# Plot with separate layers for transparency control
+ggplot() +
+  # Semester 1 lines (blue, less transparent)
+  geom_line(
+    data = combined_data %>% filter(Semester_Label == "Semester 1"),
+    aes(
+      x = Week_Adjusted,
+      y = `Running.Total..Any..Semester.Scoped.`,
+      group = interaction(Student.ID, Semester_Label),
+      color = Semester_Label
+    ),
+    alpha = 0.4,
+    size = 1.5
+  ) +
+  # Semester 2 lines (red, more transparent)
+  geom_line(
+    data = combined_data %>% filter(Semester_Label == "Semester 2"),
+    aes(
+      x = Week_Adjusted,
+      y = `Running.Total..Any..Semester.Scoped.`,
+      group = interaction(Student.ID, Semester_Label),
+      color = Semester_Label
+    ),
+    alpha = 0.1,
+    size = 1.5
+  ) +
+  scale_color_manual(values = c("Semester 1" = "blue", "Semester 2" = "red")) +
+  scale_x_continuous(breaks = 1:20, limits = c(1, 20)) +
+  ylim(0, 25) +
+  labs(
+    title = "Cumulative Mentoring Sessions Attended by Mentored Students",
+    subtitle = "Each line represents one mentored student’s cumulative sessions",
+    x = "Week of Semester",
+    y = "Cumulative Mentoring Sessions",
+    color = "Semester"
+  ) +
+  theme_bw(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    legend.position = "top",
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 13),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+```
+
+
+
+```{r}
+# Filter data from the updated dataset
+s1_data <- weekly_full_unique %>% filter(Semester == "S1")
+s2_data <- weekly_full_unique %>% filter(Semester == "S2")
+
+# Custom theme
+custom_theme <- theme_bw(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    strip.text = element_text(face = "bold", size = 12),
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank()
+  )
+
+# Plot for Semester 1
+plot_s1 <- ggplot(s1_data, aes(x = Week, y = `Running.Total..Any..Semester.Scoped.`, group = Student.ID)) +
+  geom_line(alpha = 0.6, color = "#003366", size = 1.2) +
+  facet_wrap(~ Grade.Year) +
+  labs(
+    title = "Mentoring Engagement Over Time (Semester 1)",
+    subtitle = "Each line represents one student’s cumulative sessions",
+    x = "Week of Semester",
+    y = "Cumulative Mentoring Sessions"
+  ) +
+  xlim(0, 20) +
+  ylim(0, 25) +
+  custom_theme
+
+# Plot for Semester 2
+plot_s2 <- ggplot(s2_data, aes(x = Week, y = `Running.Total..Any..Semester.Scoped.`, group = Student.ID)) +
+  geom_line(alpha = 0.6, color = "#004225", size = 1.2) +
+  facet_wrap(~ Grade.Year) +
+  labs(
+    title = "Mentoring Engagement Over Time (Semester 2)",
+    subtitle = "Each line represents one student’s cumulative sessions",
+    x = "Week of Semester",
+    y = "Cumulative Mentoring Sessions"
+  ) +
+  xlim(21, 40) +
+  ylim(0, 25) +
+  custom_theme
+
+# Arrange side by side
+grid.arrange(plot_s1, plot_s2, ncol = 2)
+
+
+```
+
+
+```{r}
+# Filter and summarize data for Semester 1 and 2
+s1_avg <- weekly_full_unique %>%
+  filter(Semester == "S1") %>%
+  group_by(Week, Grade.Year) %>%
+  summarise(Average.Running.Total = mean(`Running.Total..Any..Semester.Scoped.`, na.rm = TRUE), .groups = "drop")
+
+s2_avg <- weekly_full_unique %>%
+  filter(Semester == "S2") %>%
+  group_by(Week, Grade.Year) %>%
+  summarise(Average.Running.Total = mean(`Running.Total..Any..Semester.Scoped.`, na.rm = TRUE), .groups = "drop")
+
+# Ensure Grade.Year is a factor
+s1_avg$Grade.Year <- as.factor(s1_avg$Grade.Year)
+s2_avg$Grade.Year <- as.factor(s2_avg$Grade.Year)
+
+# Custom theme
+custom_theme <- theme_bw(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    legend.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+
+# Plot for Semester 1
+plot_s1 <- ggplot(s1_avg, aes(x = Week, y = Average.Running.Total, color = Grade.Year)) +
+  geom_line(size = 1.5) +
+  labs(
+    title = "Avg Mentoring Engagement Over Time (Semester 1)",
+    subtitle = "Each line shows the average cumulative sessions by grade",
+    x = "Week of Semester",
+    y = "Average Cumulative Mentoring Sessions",
+    color = "Grade Year"
+  ) +
+  custom_theme
+
+# Plot for Semester 2
+plot_s2 <- ggplot(s2_avg, aes(x = Week, y = Average.Running.Total, color = Grade.Year)) +
+  geom_line(size = 1.5) +
+  labs(
+    title = "Avg Mentoring Engagement Over Time (Semester 2)",
+    subtitle = "Each line shows the average cumulative sessions by grade",
+    x = "Week of Semester",
+    y = "Average Cumulative Mentoring Sessions",
+    color = "Grade Year"
+  ) +
+  custom_theme
+
+# Arrange side by side
+grid.arrange(plot_s1, plot_s2, ncol = 2)
+
+
+```
+
+
+```{r}
+# Adjust weeks to start at 1 for each semester
+s1_data <- weekly_full_unique %>%
+  filter(Semester == "S1") %>%
+  mutate(Semester_Label = "Semester 1", Week_Adjusted = Week - 1)
+
+s2_data <- weekly_full_unique %>%
+  filter(Semester == "S2") %>%
+  mutate(Semester_Label = "Semester 2", Week_Adjusted = Week - 20)
+
+combined_data <- bind_rows(s1_data, s2_data)
+
+# Calculate average cumulative sessions by Grade.Year, Semester, and adjusted Week
+avg_data <- combined_data %>%
+  group_by(Semester_Label, Grade.Year, Week_Adjusted) %>%
+  summarise(Average_Running_Total = mean(`Running.Total..Any..Semester.Scoped.`, na.rm = TRUE), .groups = "drop")
+
+# Custom theme
+custom_theme <- theme_bw(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    strip.text = element_text(face = "bold", size = 12),
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank(),
+    legend.position = "top"
+  )
+
+
+```
+
+
+```{r}
+# Dummy data for legend
+legend_data <- data.frame(
+  Week_Adjusted = c(1, 1, 1, 1),
+  Value = c(0, 0, 0, 0),
+  Line = c("Individual Student (Sem 1)", "Individual Student (Sem 2)", 
+           "Student Average (Sem 1)", "Student Average (Sem 2)"),
+  Color = c("#1E90FF", "#00FF7F", "#00008B", "#008000"),
+  Size = c(1, 1, 2, 2)
+)
+
+ggplot() +
+  # Individual student lines
+  geom_line(
+    data = combined_data %>% filter(Semester_Label == "Semester 1"),
+    aes(
+      x = Week_Adjusted,
+      y = `Running.Total..Any..Semester.Scoped.`,
+      group = interaction(Student.ID, Semester_Label)
+    ),
+    color = "#1E90FF",
+    alpha = 0.5,
+    size = 1
+  ) +
+  geom_line(
+    data = combined_data %>% filter(Semester_Label == "Semester 2"),
+    aes(
+      x = Week_Adjusted,
+      y = `Running.Total..Any..Semester.Scoped.`,
+      group = interaction(Student.ID, Semester_Label)
+    ),
+    color = "#00FF7F",
+    alpha = 0.5,
+    size = 1
+  ) +
+
+  # Semester average lines
+  geom_line(
+    data = avg_data %>% filter(Semester_Label == "Semester 1"),
+    aes(
+      x = Week_Adjusted,
+      y = Average_Running_Total
+    ),
+    color = "#00008B",
+    size = 2
+  ) +
+  geom_line(
+    data = avg_data %>% filter(Semester_Label == "Semester 2"),
+    aes(
+      x = Week_Adjusted,
+      y = Average_Running_Total
+    ),
+    color = "#008000",
+    size = 2
+  ) +
+
+  # Legend lines (invisible on plot, just for legend)
+  geom_line(
+    data = legend_data,
+    aes(x = Week_Adjusted, y = Value, color = Line, size = Line),
+    show.legend = TRUE
+  ) +
+
+  scale_color_manual(
+    name = "Line Type",
+    values = c(
+      "Individual Student (Sem 1)" = "#1E90FF",
+      "Individual Student (Sem 2)" = "#00FF7F",
+      "Student Average (Sem 1)" = "#00008B",
+      "Student Average (Sem 2)" = "#008000"
+    )
+  ) +
+  scale_size_manual(
+    name = "Line Type",
+    values = c(
+      "Individual Student (Sem 1)" = 1,
+      "Individual Student (Sem 2)" = 1,
+      "Student Average (Sem 1)" = 2,
+      "Student Average (Sem 2)" = 2
+    )
+  ) +
+
+  facet_wrap(~ Grade.Year, scales = "fixed") +
+  labs(
+  title = "Cumulative Mentoring Sessions Attended by Mentored Students by Grade Year",
+  subtitle = "Each line represents one mentored student’s cumulative sessions; bold lines show the average cumulative sessions of mentored students",
+  x = "Week of Semester",
+  y = "Cumulative Mentoring Sessions") +
+  xlim(1, 20) +
+  ylim(0, 25) +
+  custom_theme +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(),
+    axis.ticks.x = element_line(),
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.key.size = unit(1.5, "lines"),
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 15, face = "bold")
+  )
+
+
+```
+
+
+```{r}
+# Get counts per grade per semester
+mentored_per_gradeS1 <- mentored_S1 %>% count(Grade.Year)
+mentored_per_gradeS2 <- mentored_S2 %>% count(Grade.Year)
+
+# Label mappings
+grade_labels <- c(
+  "9_S1" = paste0("Grade 9 (Sem 1, students=", mentored_per_gradeS1$n[mentored_per_gradeS1$Grade.Year == 9], ")"),
+  "10_S1" = paste0("Grade 10 (Sem 1, students=", mentored_per_gradeS1$n[mentored_per_gradeS1$Grade.Year == 10], ")"),
+  "11_S1" = paste0("Grade 11 (Sem 1, students=", mentored_per_gradeS1$n[mentored_per_gradeS1$Grade.Year == 11], ")"),
+  "12_S1" = paste0("Grade 12 (Sem 1, students=", mentored_per_gradeS1$n[mentored_per_gradeS1$Grade.Year == 12], ")"),
+  "9_S2" = paste0("Grade 9 (Sem 2, students=", mentored_per_gradeS2$n[mentored_per_gradeS2$Grade.Year == 9], ")"),
+  "10_S2" = paste0("Grade 10 (Sem 2, students=", mentored_per_gradeS2$n[mentored_per_gradeS2$Grade.Year == 10], ")"),
+  "11_S2" = paste0("Grade 11 (Sem 2, students=", mentored_per_gradeS2$n[mentored_per_gradeS2$Grade.Year == 11], ")"),
+  "12_S2" = paste0("Grade 12 (Sem 2, students=", mentored_per_gradeS2$n[mentored_per_gradeS2$Grade.Year == 12], ")")
+)
+
+# Combine attendance data
+combined_attendance <- bind_rows(
+  mentored_in_course_S1 %>%
+    group_by(Student.ID, Week, Grade.Year) %>%
+    summarise(Attended = any(Attended == "Yes"), .groups = "drop") %>%
+    group_by(Week, Grade.Year) %>%
+    summarise(Percent.Attended = mean(Attended) * 100, .groups = "drop") %>%
+    mutate(Semester = "S1"),
+
+  mentored_in_course_S2 %>%
+    group_by(Student.ID, Week, Grade.Year) %>%
+    summarise(Attended = any(Attended == "Yes"), .groups = "drop") %>%
+    group_by(Week, Grade.Year) %>%
+    summarise(Percent.Attended = mean(Attended) * 100, .groups = "drop") %>%
+    mutate(Semester = "S2")
+) %>%
+  mutate(Grade.Sem = paste0(Grade.Year, "_", Semester))
+
+# Order factor levels
+combined_attendance$Grade.Sem <- factor(
+  combined_attendance$Grade.Sem,
+  levels = c("9_S1", "9_S2", "10_S1", "10_S2", "11_S1", "11_S2", "12_S1", "12_S2")
+)
+
+# Final plot
+ggplot(combined_attendance, aes(x = Week, y = Percent.Attended, color = Grade.Sem)) +
+  geom_line(size = 1.2, alpha = 0.85) +
+  geom_point(size = 2) +
+  geom_vline(xintercept = 21, linetype = "dashed", color = "black", linewidth = 1.3) +
+  scale_color_manual(
+    values = c(
+      "9_S1" = "#FFD700", "10_S1" = "#3CB371", "11_S1" = "#00BFFF", "12_S1" = "#4169E1",
+      "9_S2" = "#FFD700", "10_S2" = "#3CB371", "11_S2" = "#00BFFF", "12_S2" = "#4169E1"
+    ),
+    labels = grade_labels,
+    name = "Grade & Semester (Sem)"
+  ) +
+  labs(
+    title = "Weekly Percentage of Mentored Students Attending at least 1 Mentoring Session by Grade",
+    subtitle = "Dashed vertical line marks the cutoff between Semesters 1 & 2",
+    x = "Week of Academic Year",
+    y = "Percent Attended"
+  ) +
+  scale_x_continuous(breaks = seq(2, max(combined_attendance$Week), by = 2)) +
+  theme_bw(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    legend.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank()
+  )
+
+
+```
+
+
+# Skewness
+```{r}
+# Custom skewness function
+custom_skew <- function(x) {
+  if (length(unique(x)) > 1) {
+    return(3 * (mean(x, na.rm = TRUE) - median(x, na.rm = TRUE)) / sd(x, na.rm = TRUE))
+  } else {
+    return(NA)
+  }
+}
+
+# Skewness per Week - Semester 1 (Mentored Students)
+sd_skewness_week_S1 <- students_df %>%
+  filter(Mentored.Student == "Yes", Semester == "S1") %>%
+  group_by(Course.Description, Mentor.Course, Week) %>%
+  filter(n() >= 5) %>%  # <-- Added: filter out small groups before summarizing
+  summarize(SD_Skewness = custom_skew(Grade.Perc), .groups = "drop") %>%
+  mutate(Semester = "S1") %>%
+  filter(!is.na(SD_Skewness))
+
+# Skewness per Week - Semester 2 (Mentored Students)
+sd_skewness_week_S2 <- students_df %>%
+  filter(Mentored.Student == "Yes", Semester == "S2") %>%
+  group_by(Course.Description, Mentor.Course, Week) %>%
+  filter(n() >= 5) %>%  # <-- Added: filter out small groups before summarizing
+  summarize(SD_Skewness = custom_skew(Grade.Perc), .groups = "drop") %>%
+  mutate(Semester = "S2") %>%
+  filter(!is.na(SD_Skewness))
+
+# Define custom color values and labels for the legend
+color_values <- c(
+  "Yes" = "blue",
+  "No" = "red"
+)
+
+color_labels <- c(
+  "Yes" = "At least 1 student mentored in this course (blue)",
+  "No" = "At least 1 student not mentored in this course (red)"
+)
+
+caption_note <- "Note: Courses with fewer than 5 mentored students were filtered out for reliable skewness calculation."
+
+# Plot for Semester 1 with bigger title, legend, and axis labels
+ggplot(sd_skewness_week_S1, aes(x = Week, y = SD_Skewness, color = Mentor.Course)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~ Course.Description) +
+  scale_color_manual(
+    values = color_values,
+    labels = color_labels,
+    name = "Mentored Course Indicator"
+  ) +
+  labs(
+    title = "Weekly Skewness of Mentored Students Grades by Course Description (Semester 1)",
+    subtitle = "Skewness calculated using 3 × (mean – median) / standard deviation",
+    x = "Week of Academic Year",
+    y = "Skewness of Grades",
+    caption = caption_note
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 14),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    plot.caption = element_text(size = 10, face = "italic")
+  )
+
+# Plot for Semester 2 with bigger title, legend, and axis labels
+ggplot(sd_skewness_week_S2, aes(x = Week, y = SD_Skewness, color = Mentor.Course)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~ Course.Description) +
+  scale_color_manual(
+    values = color_values,
+    labels = color_labels,
+    name = "Mentored Course Indicator"
+  ) +
+  labs(
+    title = "Weekly Skewness of Mentored Students Grades by Course Description (Semester 2)",
+    subtitle = "Skewness calculated using 3 × (mean – median) / standard deviation",
+    x = "Week of Academic Year",
+    y = "Skewness of Grades",
+    caption = caption_note
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 14),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    plot.caption = element_text(size = 10, face = "italic")
+  )
+
+
+```
+
+```{r}
+# Custom skewness function
+custom_skew <- function(x) {
+  if (length(unique(x)) > 1) {
+    return(3 * (mean(x, na.rm = TRUE) - median(x, na.rm = TRUE)) / sd(x, na.rm = TRUE))
+  } else {
+    return(NA)
+  }
+}
+
+# Skewness per Week - Semester 1 (Mentored Students, Attendance)
+absence_skewness_week_S1 <- students_df %>%
+  filter(Mentored.Student == "Yes", Semester == "S1") %>%
+  group_by(Course.Description, Mentor.Course, Week) %>%
+  filter(n() >= 5) %>%
+  summarize(SD_Skewness = custom_skew(Total.Days.Absent), .groups = "drop") %>%
+  mutate(Semester = "S1") %>%
+  filter(!is.na(SD_Skewness))
+
+# Skewness per Week - Semester 2 (Mentored Students, Attendance)
+absence_skewness_week_S2 <- students_df %>%
+  filter(Mentored.Student == "Yes", Semester == "S2") %>%
+  group_by(Course.Description, Mentor.Course, Week) %>%
+  filter(n() >= 5) %>%
+  summarize(SD_Skewness = custom_skew(Total.Days.Absent), .groups = "drop") %>%
+  mutate(Semester = "S2") %>%
+  filter(!is.na(SD_Skewness))
+
+# Define custom color values and labels for the legend
+color_values <- c("Yes" = "blue", "No" = "red")
+color_labels <- c(
+  "Yes" = "At least 1 student mentored in this course (blue)",
+  "No" = "At least 1 student not mentored in this course (red)"
+)
+
+caption_note <- "Note: Courses with fewer than 5 mentored students were filtered out for reliable skewness calculation."
+
+# Plot for Semester 1 - Attendance Skewness
+ggplot(absence_skewness_week_S1, aes(x = Week, y = SD_Skewness, color = Mentor.Course)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~ Course.Description) +
+  scale_color_manual(values = color_values, labels = color_labels, name = "Mentored Course Indicator") +
+  labs(
+    title = "Weekly Skewness of Mentored Students' Absences by Course Description (Semester 1)",
+    subtitle = "Skewness calculated using 3 × (mean – median) / standard deviation",
+    x = "Week of Academic Year",
+    y = "Skewness of Total Days Absent",
+    caption = caption_note
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 14),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    plot.caption = element_text(size = 10, face = "italic")
+  )
+
+# Plot for Semester 2 - Attendance Skewness
+ggplot(absence_skewness_week_S2, aes(x = Week, y = SD_Skewness, color = Mentor.Course)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~ Course.Description) +
+  scale_color_manual(values = color_values, labels = color_labels, name = "Mentored Course Indicator") +
+  labs(
+    title = "Weekly Skewness of Mentored Students' Absences by Course Description (Semester 2)",
+    subtitle = "Skewness calculated using 3 × (mean – median) / standard deviation",
+    x = "Week of Academic Year",
+    y = "Skewness of Total Days Absent",
+    caption = caption_note
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 14),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    plot.caption = element_text(size = 10, face = "italic")
+  )
+
+```
+
+
