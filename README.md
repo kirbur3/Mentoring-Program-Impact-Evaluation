@@ -15,6 +15,6 @@ WHS Mentoring Data Weeks 21-30.csv
 WHS Mentoring Data Weeks 31-34.csv
 
 
-These csv files above have been merged, cleaned, and manipulated to create the file below that we ended up using.
+These csv files above have been merged, cleaned, and manipulated to create the dataset below that the team ended up using for this project.
 
 WHS_cleaned_6.csv
