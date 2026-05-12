@@ -18,7 +18,7 @@ This is the PowerPoint that our team presented at the end of the course.
 
 This is the project report.
 
-These csv files below have been merged, cleaned, and manipulated to create the dataset *WHS_cleaned_6.csv* that the team ended up using for this project.
+These csv files below have been merged, cleaned, and manipulated to create the dataset *WHS_cleaned_6.csv* which the team ended up using for this project.
 
 Mentoring 24-25 - SEMESTER 2 STUDENT PARTICIPANTS - 2024-25 - Mentoring 24-25 - SEMESTER 2 STUDENT PARTICIPANTS - 2024-25.csv
 
