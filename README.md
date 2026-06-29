@@ -1,31 +1,43 @@
 # Mentoring-Program-Impact-Evaluation
 
-Our team evaluated the Community-School Partnership (CSP) mentoring program at Washougal High School, developed by the East County Citizens Alliance (ECCA). Using weekly grade and attendance data from the 2024–2025 school year, we analyzed how mentoring influenced academic performance and attendance in classes that students were both mentored and did not need mentoring in. As a team, we performed data cleaning and analysis using Python (pandas) and R (ggplot2, dplyr, mgcv, mgcViz). We applied Generalized Additive Models (GAMs) to capture non-linear trends in student outcomes over time. Grades and attendance were standardized into Z-scores to compare mentored and non-mentored students within classes. Our findings showed that consistent and early mentoring—especially every two weeks—was associated with higher academic performance and fewer absences.
+This project is listed on my resume as "Mentoring Program Impact Evaluation."
 
-**STAT409 Project:**
+Real-world team project: statistical evaluation of the ECCA Community-School Partnership mentoring program at Washougal High School using 2024-25 academic year data (~30,000 records across five source files, merged into WHS_cleaned_6.csv).
 
-This R Markdown file contains the part of the project which centers on exploratory analysis of mentoring participation at Washougal High School. Using a cleaned and merged dataset of weekly student–course records, I examined how mentored students were distributed across courses, subjects, and semesters. I explored enrollment patterns, identified where mentored students clustered, and compared participation across different academic areas. Visualizations built with dplyr, ggplot2, and gridExtra helped reveal trends and concentrations that helped later with modeling.
+Tools (mine): R, dplyr, ggplot2, gridExtra, mgcv
+Tools (team): R, Python, pandas, mgcv, mgcViz
 
-**STAT409 Project Modeling:**
+## Exploratory Data Analysis (STAT409_Project.Rmd) - My Contribution
 
-This R script contains the modeling code.
+This file centers on exploratory analysis of mentoring participation at Washougal High School. Using a cleaned and merged dataset of weekly student-course records, I examined how mentored students were distributed across courses, subjects, and semesters, explored enrollment patterns, identified where mentored students clustered, and compared participation across different academic areas. Visualizations built with dplyr, ggplot2, and gridExtra helped reveal trends and concentrations that informed later modeling.
 
-**ECCA Mentoring Program at Washougal High Presentation:**
+- Mentored vs. non-mentored student counts broken down by semester, course description, subject, and grade year
+- Unique mentored student counts across both semesters, and per-semester splits
+- Weekly cumulative mentoring session totals by student and by class, across both semesters
+- Weekly attendance trend visualizations by grade level (Semesters 1 and 2 separately)
+- Custom skewness function (Bowley-style: 3*(mean-median)/sd) applied to grade percentage distributions by week, split by mentored vs. non-mentored course status
+- Same custom skewness function applied to absence distributions over time
+- All visualizations built with ggplot2; multi-panel figures composed with gridExtra
 
-This is the PowerPoint that our team presented at the end of the course.
+## Statistical Modeling and Visualization (STAT409_Project_Modeling.R) - Team Contribution
+- Single-class geometry plot: student-level Z-score trajectories within a specific class (MAT522), comparing mentored vs. unmentored students week by week, with IQR ribbon for the non-mentored group and red X markers for attended mentoring sessions
+- GAM (gam_model_grades) fit using mgcv on mentored students only: smooth terms for week-within-semester (k=15), running class mentoring total (k=6), and total absences (k=6); interaction terms for mentor course status x subject category and mentor course status x grade year; random effects for student intercepts and student-level week slopes
+- Prediction function (f.predmat): simulates grade Z-score trajectories with 95% CIs for a typical 10th-grade student across 5 subject categories and mentoring-gap scenarios (every 1-4 weeks), excluding random effects for population-level estimates
 
-**ECCA Mentoring Program Report:**
+## Key Finding
+Consistent, early mentoring, especially biweekly sessions, was associated with sustained grade improvements and fewer absences, with spillover effects into non-mentored classes. Findings featured in The Columbian (August 2025).
 
-This is the project report.
+## Deliverables
+- STAT409_Project.Rmd - EDA file
+- STAT409_Project_Modeling.R - modeling script
+- ECCA Mentoring Program at Washougal High Presentation.pptx - team presentation
+- ECCA Mentoring Program Report - project report
+- WHS_cleaned_6.csv - merged and cleaned dataset
 
-These csv files below have been merged, cleaned, and manipulated to create the dataset *WHS_cleaned_6.csv* which the team ended up using for this project.
-
-Mentoring 24-25 - SEMESTER 2 STUDENT PARTICIPANTS - 2024-25 - Mentoring 24-25 - SEMESTER 2 STUDENT PARTICIPANTS - 2024-25.csv
-
-WHS Mentoring Data Weeks 2-10.csv
-
-WHS Mentoring Data Weeks 11-20.csv
-
-WHS Mentoring Data Weeks 21-30.csv
-
-WHS Mentoring Data Weeks 31-34.csv
+## Source Data Files
+These files were merged, cleaned, and manipulated to create WHS_cleaned_6.csv:
+- Mentoring 24-25 - SEMESTER 2 STUDENT PARTICIPANTS - 2024-25 - Mentoring 24-25 - SEMESTER 2 STUDENT PARTICIPANTS - 2024-25.csv
+- WHS Mentoring Data Weeks 2-10.csv
+- WHS Mentoring Data Weeks 11-20.csv
+- WHS Mentoring Data Weeks 21-30.csv
+- WHS Mentoring Data Weeks 31-34.csv
